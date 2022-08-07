@@ -8,9 +8,3 @@ def index(request):
     return render(request, "encyclopedia/index.html", {
         "entries": util.list_entries()
     })
-    
-def html(request):
-    return render(request, "encyclopedia/html.html", {
-        "entries/HTML.md": util.list_entries()
-    })    
-
