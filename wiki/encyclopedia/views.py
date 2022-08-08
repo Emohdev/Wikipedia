@@ -94,3 +94,11 @@ def new(request):
     return render (request, "encyclopedia/new.html", {
         "form": form
     })
+    
+    
+def random_entry(request):
+    entries = utiil.list_entries()
+    entry = entries[randint(0, len(entries) - 1)]
+    return redirect("wiki", entry)
+
+def
