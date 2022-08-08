@@ -1,3 +1,4 @@
+from email import contentmanager
 from random import randint
 from django.shortcuts import render, redirect
 from django.http import Http404
@@ -7,7 +8,29 @@ from markdown2 import Markdown
 
 from . import util
 
-
+class NewEntryForm(forms.Form):
+    title = forms.CharField(
+        required=True,
+        label="",
+        widget=forms.TextInput(
+            attrs={"placeholder": "Title", "class": "mb-4"}
+        )
+    )
+    content = forms.CharField(
+        required=True,
+        label="",
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control mb-4",
+                "placeholder": "content (markdown)",
+                "id": "new_content"
+            }
+        )
+    )
+    
+    
+    
+    
 def index(request):
     return render(request, "encyclopedia/index.html", {
         "entries": util.list_entries()
@@ -28,17 +51,46 @@ def search(request):
             "found_entries": "", "query": query,
         })
         
-entries = util.list_entries()
+    entries = util.list_entries()
 
-found_entries = [
-    valid_entry
-    for valid_entry in entries
-    if query.lower() in valid_entry.lower()
-]
-    
-if len(found_entries) == 1:
-    return redirect("wiki", found_entries[0])
+    found_entries = [
+        valid_entry
+        for valid_entry in entries
+        if query.lower() in valid_entry.lower()
+    ]
+        
+    if len(found_entries) == 1:
+        return redirect("wiki", found_entries[0])
 
-return render(request, "encyclopedia/search.html", {
-        "found_entries": found_entries, "query": query, 
+    return render(request, "encyclopedia/search.html", {
+            "found_entries": found_entries, "query": query, 
+            })
+ 
+def new(request):
+    if request.method == "GET":
+        return render(request, "encyclopedia/new.html", {
+            "form": NewEntryForm()
         })
+        
+    form = NewEntryForm(request.POST)
+    if form.is_valid():
+        title = form.cleaned_data.get("title")
+        content = form.cleaned_data.get("content")
+        
+        if title.lower() in [entry.lower() for entry in util.list_entries()]:
+            messages.add_message(
+                request, messages.WARNING, message = f'entry "{title}" already exists'
+            )
+        else:
+            with open(f"entries/{title}.md", "w") as file:
+                file.write(content)
+            return redirect("wiki", title)    
+    
+    else:
+        messages.add_message(
+            request, messages.WARNING, message="Invalid request form"
+        )
+        
+    return render (request, "encyclopedia/new.html", {
+        "form": form
+    })
